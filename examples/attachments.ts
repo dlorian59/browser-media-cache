@@ -15,6 +15,9 @@ export function createAttachmentCache() {
     // RU: Необязательное постоянное хранилище отделено от бюджета байтов в памяти.
     store: new CacheStorageStore({ cachePrefix: 'attachments:v1:', maxAgeMs: 60 * 60 * 1000 }),
     persistence: 'required',
+    // EN: Diagnostics observe storage failures; they do not suppress required-policy errors.
+    // RU: Диагностика наблюдает ошибки хранилища, но не подавляет ошибки режима required.
+    onStoreError: ({ operation, error }) => console.warn('Media persistence', operation, error),
   });
 }
 

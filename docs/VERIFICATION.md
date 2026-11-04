@@ -32,7 +32,7 @@ desktop browser window or existing personal browser profile was used.
 | Guide examples | 26 README and EN/RU TypeScript/TSX examples typechecked with documented setup and installed React peer types |
 | Node unit/race suite | 31 passed, zero failures/skips |
 | Packed artifact installed in an isolated consumer | Pass; dist, package metadata, EN/RU documentation, roadmap and MIT license |
-| Documentation navigation in the installed package | All 74 relative file links and 34 Markdown heading anchors resolve |
+| Documentation navigation in the installed package | All 112 relative file links and 36 Markdown heading anchors resolve |
 | Consumer TypeScript imports and actual URL lifecycle | Pass |
 | Core/storage import without a browser or installed React | Pass |
 | Real-browser demo controls | Shared A/B URL, A release preserves B, logout clears both |
@@ -90,6 +90,14 @@ artifact offline, verifies that optional React was not installed, executes the
 core, checks declarations, and removes only that temporary directory.
 
 ## Remaining limits
+
+OSS-009 documentation/API review on 2026-11-05 added complete EN/RU references
+covering every public export, option, method, hook state and persistence policy.
+The four linked TypeScript/TSX example files compile strictly, including the custom
+store contract, test platform hooks and direct React hook. The packed core consumer
+passed with 25 files and the navigation totals above. Core implementation and
+ownership semantics were unchanged; this review does not claim a new browser
+stress run for the core or a performance measurement.
 
 - Safari/WebKit, mobile devices, older Chromium/Firefox, and React 18 are not tested.
 - No real application has been integrated yet.

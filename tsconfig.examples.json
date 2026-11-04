@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "noEmit": true, "rootDir": "." },
-  "include": ["examples/**/*.ts"]
+  "compilerOptions": { "noEmit": true, "rootDir": ".", "jsx": "react-jsx" },
+  "include": ["examples/**/*.ts", "examples/**/*.tsx"]
 }

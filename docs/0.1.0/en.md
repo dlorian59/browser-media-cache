@@ -4,6 +4,8 @@
 
 **[EN](en.md) · [RU](ru.md)** · [Version index](../index.md) · [Repository README](../../README.md)
 
+[Complete API, defaults, mechanism map and troubleshooting](reference.en.md)
+
 This guide targets browser application developers. The core owns Blob URLs;
 your application owns DOM elements, authentication, the logical key scheme, and
 closing each handle. Every example uses the public 0.1.0 API.

@@ -5,6 +5,8 @@
 
 Version: **[0.1.0](docs/0.1.0/en.md)** · [All documentation](docs/index.md)
 
+[Complete API and defaults](docs/0.1.0/reference.en.md) · [Troubleshooting](docs/0.1.0/reference.en.md#troubleshooting)
+
 Share browser media loads while keeping ownership of each object URL explicit.
 The framework-independent core provides acquire/release handles, consumer-specific
 cancellation, idle retention, budget eviction, and namespace cleanup. CacheStorage
@@ -120,6 +122,8 @@ private application source, configuration, history, or media fixtures were copie
 <summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/lang-ru-dark.svg"><img src="assets/lang-ru-light.svg" width="42" height="26" alt="RU"></picture></summary>
 
 Версия: **[0.1.0](docs/0.1.0/ru.md)** · [Вся документация](docs/index.md)
+
+[Полный API и defaults](docs/0.1.0/reference.ru.md) · [Устранение проблем](docs/0.1.0/reference.ru.md#устранение-проблем)
 
 Общая загрузка медиа в браузере с явным владением каждым object URL. Независимое
 от фреймворков ядро предоставляет acquire/release handles, индивидуальную отмену,
