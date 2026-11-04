@@ -17,6 +17,7 @@
   "files": [
     "dist",
     "docs",
+    "examples",
     "README.md",
     "ROADMAP.md",
     "LICENSE",
@@ -41,6 +42,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:examples": "npm run build && tsc -p tsconfig.examples.json",
     "test": "npm run build && node --test test/*.test.mjs",
     "demo:build": "npm run build && node scripts/build-demo.mjs",
     "demo": "npm run demo:build && node scripts/serve-demo.mjs",

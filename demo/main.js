@@ -25,6 +25,8 @@ function tracker() {
 
 const mainTracker = tracker();
 let mainLoads = 0;
+// EN: The application owns one cache; UI previews borrow independently released handles.
+// RU: Приложение владеет одним кэшем; UI-превью получают независимо освобождаемые handles.
 const cache = new MediaCache({ load: async () => { mainLoads++; await sleep(30); return svg; }, idleTtlMs: 3000, maxEntries: 4, objectUrls: mainTracker.objectUrls });
 const handles = new Map();
 const refresh = () => {
@@ -37,6 +39,8 @@ const refresh = () => {
   }, null, 2);
 };
 for (const slot of ['a', 'b']) {
+  // EN: The same namespace/key shares a pending load and its final object URL.
+  // RU: Один namespace/key разделяет незавершённую загрузку и итоговый object URL.
   document.querySelector(`#acquire-${slot}`).onclick = async () => {
     if (handles.has(slot)) return;
     const handle = cache.acquire(identity());
@@ -48,10 +52,14 @@ for (const slot of ['a', 'b']) {
     refresh();
   };
   document.querySelector(`#release-${slot}`).onclick = () => {
+    // EN: Remove the DOM reference before releasing this consumer's ownership.
+    // RU: Уберите ссылку из DOM перед освобождением владения этого потребителя.
     document.querySelector(`#image-${slot}`).removeAttribute('src');
     handles.get(slot)?.release(); handles.delete(slot); refresh();
   };
 }
+// EN: Invalidation also notifies mounted consumers to remove their revoked image URLs.
+// RU: Инвалидация также уведомляет смонтированных потребителей убрать отозванные URL изображений.
 document.querySelector('#logout').onclick = async () => { await cache.invalidateNamespace('demo-account'); refresh(); };
 setInterval(refresh, 250);
 refresh();
@@ -89,6 +97,8 @@ export async function runBrowserChecks() {
   } finally { ttl.dispose(); }
 
   let sourceAborts = 0;
+  // EN: Only the final pending owner cancels the shared loader.
+  // RU: Только последний владелец незавершённой загрузки отменяет общий loader.
   const pending = new MediaCache({ maxEntries: 0, objectUrls: metrics.objectUrls, load: ({ signal }) => new Promise((resolve, reject) => {
     const timer = setTimeout(() => resolve(svg), 30);
     signal.addEventListener('abort', () => { sourceAborts++; clearTimeout(timer); reject(signal.reason); }, { once: true });
@@ -117,6 +127,8 @@ export async function runBrowserChecks() {
   } finally { race.dispose(); }
 
   const prefix = `browser-media-cache:browser-test:${crypto.randomUUID()}:`;
+  // EN: Test persistence uses an isolated prefix and clears only its own namespaces.
+  // RU: Тестовое хранилище использует отдельный префикс и очищает только свои namespaces.
   const store = new CacheStorageStore({ cachePrefix: prefix });
   let persistenceLoads = 0;
   const load = async () => { persistenceLoads++; return svg; };
@@ -143,6 +155,8 @@ export async function runBrowserChecks() {
 }
 
 function Preview({ instance, namespace, mediaKey }) {
+  // EN: React ownership delegates to the core hook; the component owns no separate URL cache.
+  // RU: Владение в React делегируется hook ядра; компонент не содержит отдельного кэша URL.
   const state = useMedia(instance, namespace, mediaKey);
   return state.status === 'ready'
     ? React.createElement('img', { src: state.resource.url, alt: 'React shared fixture', 'data-ready': 'true' })

@@ -51,6 +51,14 @@ ownership, abort the handle signal, and revoke URLs.
 
 ## Capabilities and examples
 
+For an avatar reused in a profile and attachment list, start with the
+[commented attachment example](examples/attachments.ts): one loader, independent
+image cleanup, per-preview cancellation, diagnostics and account logout.
+React applications can use the companion [browser-media-cache-react](https://github.com/59Alex/browser-media-cache-react)
+provider, CachedImage and MediaBoundary. The companion currently exists as a
+local sibling checkout; public creation awaits restored GitHub access. It reuses
+this package's hook and owns no second cache.
+
 | Capability | Guide |
 | --- | --- |
 | Acquire/release and shared loads | [Ownership](docs/0.1.0/en.md#ownership-and-shared-loads) |
@@ -158,6 +166,14 @@ handle.release();
 активное владение, отменяют signal handle и отзывают URL.
 
 ## Возможности и примеры
+
+Для аватара, повторяющегося в профиле и списке вложений, используйте
+[комментированный пример](examples/attachments.ts): один loader, отдельная очистка
+изображений, отмена превью, диагностика и logout аккаунта. Для React подготовлен
+отдельный [browser-media-cache-react](https://github.com/59Alex/browser-media-cache-react)
+с provider, CachedImage и MediaBoundary. Пока это локальный соседний checkout;
+публичное создание ожидает восстановления доступа к GitHub. Он использует hook
+этого пакета и не содержит второго кэша.
 
 | Возможность | Руководство |
 | --- | --- |

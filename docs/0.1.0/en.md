@@ -10,6 +10,11 @@ closing each handle. Every example uses the public 0.1.0 API.
 
 ## Capability map
 
+Practical scenario: the same user portrait appears in a profile, message list and
+attachment preview. A versioned key shares loading while each mounted element owns
+its own handle. The [complete attachment source](../../examples/attachments.ts)
+includes paired EN/RU comments and exports the operations below.
+
 | Capability | Example |
 | --- | --- |
 | Create a cache and install the package | [Setup](#setup) |
@@ -21,6 +26,15 @@ closing each handle. Every example uses the public 0.1.0 API.
 | Persist Blobs and choose storage error policy | [CacheStorage](#optional-cachestorage) |
 | React effect ownership and StrictMode cleanup | [React](#optional-react-hook) |
 | Inspect counters and reproduce stress checks | [Diagnostics](#diagnostics-and-demo) |
+
+| Application operation | Commented source |
+|---|---|
+| Configure authenticated loading, persistence and idle limits | [createAttachmentCache](../../examples/attachments.ts) |
+| Mount repeated avatar/attachment elements and release each one | [mountAttachment](../../examples/attachments.ts) |
+| Cancel one preview without cancelling the other | [cancelOnePreview](../../examples/attachments.ts) |
+| Inspect pressure and collect idle entries | [inspectAttachmentBudget](../../examples/attachments.ts) |
+| Refresh a version or log an account out | [refreshAttachment / logoutAttachments](../../examples/attachments.ts) |
+| Finish application ownership | [shutdownAttachments](../../examples/attachments.ts) |
 
 ## Setup
 
@@ -278,6 +292,13 @@ core gives it immutable identity objects, not internal entries. Any shared or
 remote implementation must define its own cross-client consistency guarantees.
 
 ## Optional React hook
+
+For ready-to-use components, the companion
+[browser-media-cache-react](https://github.com/59Alex/browser-media-cache-react)
+provides a scoped provider, CachedImage and MediaBoundary over this same hook.
+It is currently a local sibling repository pending public creation. Its bootstrap
+builds and installs this package as a local tarball, so npm publication is not required.
+Use the hook directly when your rendering logic already has its own component boundary.
 
 The core has no React import. The /react entry point is an optional peer adapter;
 install React in the consuming application. React 19.3.1 StrictMode was tested;

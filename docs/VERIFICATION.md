@@ -32,7 +32,7 @@ desktop browser window or existing personal browser profile was used.
 | Guide examples | 26 README and EN/RU TypeScript/TSX examples typechecked with documented setup and installed React peer types |
 | Node unit/race suite | 31 passed, zero failures/skips |
 | Packed artifact installed in an isolated consumer | Pass; dist, package metadata, EN/RU documentation, roadmap and MIT license |
-| Documentation navigation in the installed package | All 58 relative file links and 34 Markdown heading anchors resolve |
+| Documentation navigation in the installed package | All 74 relative file links and 34 Markdown heading anchors resolve |
 | Consumer TypeScript imports and actual URL lifecycle | Pass |
 | Core/storage import without a browser or installed React | Pass |
 | Real-browser demo controls | Shared A/B URL, A release preserves B, logout clears both |
@@ -73,6 +73,7 @@ in raw reports are diagnostic timings and not a comparative benchmark.
 ```sh
 npm ci
 npm run typecheck
+npm run typecheck:examples
 npm test
 npm run test:package
 npx playwright install chromium firefox
