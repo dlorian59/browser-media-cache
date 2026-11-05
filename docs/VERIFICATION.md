@@ -8,6 +8,15 @@ Verification date: 2026-10-24, Asia/Yekaterinburg. Source implementation tested
 locally on Linux. This document describes observed behavior, not a guarantee for
 all browsers or application integrations.
 
+## OSS-013 application integration · 2026-11-05
+
+The additive HTTP factory delegates ownership to MediaCache. Its tests cover shared authenticated GETs, declared and actual response limits, deadline cancellation of a stalled body, a late ignored request callback, observable HTTP status and independent owner cancellation. 35 core tests pass; all examples typecheck. A clean packed non-React consumer exercises the new factory and typechecks the complete http-attachments.ts example. Packed docs: 152 file links and 36 heading anchors resolved (30 files).
+
+The browser companion records the real HTTP gallery in Chromium: one intentional 503, shared retry, cancellation, native audio progress, cached remount and namespace replacement. It is a bounded local fixture, not production authentication or a heap benchmark. The HTTP limit does not cover persistent-store hits, decoded memory or arbitrary custom-loader allocation.
+
+Добавлены HTTP-фабрика и профили без замены движка владения. Проверены предел ответа, дедлайн, отмена, status ошибки и чистый consumer полного примера. Регистрация пакета в npm и production-интеграция этой проверкой не подтверждаются.
+
+
 ## Environment
 
 | Component | Tested version |

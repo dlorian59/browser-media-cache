@@ -2,6 +2,8 @@
 
 [← Back to documentation and versions / Назад к документации и версиям](../index.md)
 
+[Application walkthrough](application.en.md)
+
 **[EN](en.md) · [RU](ru.md)** · [Version index](../index.md) · [Repository README](../../README.md)
 
 [Complete API, defaults, mechanism map and troubleshooting](reference.en.md)

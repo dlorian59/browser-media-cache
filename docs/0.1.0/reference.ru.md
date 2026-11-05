@@ -2,11 +2,32 @@
 
 [← Руководство](ru.md) · [EN](reference.en.md) · [Версии](../index.md) · [README](../../README.md)
 
+## HTTP-фабрика и профили
+
+[Разбор интеграции](application.ru.md) · [Полный исходник примера](../../examples/http-attachments.ts)
+
+Корневой entry дополнительно экспортирует `createHttpMediaCache`, `MEDIA_CACHE_PROFILES`, `MediaHttpError`, типы `HttpMediaCacheOptions`, `MediaCacheProfile`. Фабрика возвращает прежний `MediaCache`; его методы и владение не изменяются.
+
+| HTTP-параметр | По умолчанию | Контракт |
+|---|---|---|
+| `url(context)` | Обязателен | Синхронный string/URL resolver; context содержит namespace/key/общий signal. Задаёт конечный авторизованный адрес. |
+| `request(context)` | Нет | Sync/async RequestInit при фактической сетевой загрузке, с deadline signal. Credentials/headers принадлежат приложению; только GET без body. |
+| `fetch` | Global fetch | Совместимый авторизованный транспорт; соблюдает signal/redirect. |
+| `profile` | `previews` | `previews`, `avatars`, `transient`; неизвестное имя вызывает TypeError. |
+| `maxMediaBytes` | Из профиля | Положительное безопасное целое; проверка Content-Length и фактических байтов тела. Не ограничивает store hit или декодирование браузером. |
+| `timeoutMs` | 30000 | Целое 1..2147483647; дедлайн включает async request config, заголовки и тело. |
+| Прежние MediaCacheOptions, кроме `load` | Defaults/профиль | Явные idle/entry/byte budgets переопределяют профиль; storage/hooks/diagnostics переиспользуются. |
+
+Замороженные профили: previews = idle30с, 128 записей, кэш64MiB, HTTP8MiB; avatars = 60с, 256 записей, кэш16MiB, HTTP2MiB; transient = нулевые idle/entries/cache, HTTP8MiB. `MEDIA_CACHE_PROFILES` раскрывает значения для осознанной настройки/своего loader. Фабрика всегда устанавливает GET, signal, cache no-store и redirect error; автоматического retry, обновления авторизации или проверки MIME/кодека нет.
+
+`MediaHttpError.status` содержит HTTP-статус отказа. Слишком большая/неверная объявленная длина или лишние реальные байты приводят к RangeError. Дедлайн — TimeoutError. При ошибке/отмене reader закрывается. Callback, игнорирующий сигнал, может продолжать собственную фоновую работу, но после его завершения поздний запрос не отправляется. Буферизация браузера и создание Blob могут потреблять память сверх счётчика принятых байтов.
+
+
 ## Точки входа и требования
 
 | Импорт | Публичные экспорты | Требования |
 |---|---|---|
-| @59alex/browser-media-cache | MediaCache; типы MediaKey, LoadContext, BlobStore, StoreOperation, StoreFailure, MediaCacheOptions, MediaResource, MediaHandle, AcquireOptions, EntrySnapshot, CacheSnapshot | ES2022, Blob, AbortController/Signal.reason, queueMicrotask, performance, таймеры и API object URL |
+| @59alex/browser-media-cache | MediaCache, createHttpMediaCache, MEDIA_CACHE_PROFILES, MediaHttpError; типы HttpMediaCacheOptions, MediaCacheProfile, MediaKey, LoadContext, BlobStore, StoreOperation, StoreFailure, MediaCacheOptions, MediaResource, MediaHandle, AcquireOptions, EntrySnapshot, CacheSnapshot | ES2022, Blob, AbortController/Signal.reason, queueMicrotask, performance, таймеры и API object URL |
 | @59alex/browser-media-cache/cache-storage | CacheStorageStore, CacheStorageStoreOptions | CacheStorage, Request, Response; безопасный контекст для браузерного хранилища |
 | @59alex/browser-media-cache/react | useMedia, MediaState | React ^18.3.1 или ^19.0.0; браузерные API при получении медиа в effects |
 | @59alex/browser-media-cache/package.json | Метаданные пакета | Поддержка импорта JSON средствами сборки приложения |

@@ -4,6 +4,8 @@
 
 [Repository README · EN / RU](../README.md)
 
+Start with an existing application / Подключение к существующему приложению: [EN](0.1.0/application.en.md) · [RU](0.1.0/application.ru.md).
+
 | Version / Версия | English | Русский | Runtime / Среда |
 | --- | --- | --- | --- |
 | 0.1.0 | [Guide and capability examples](0.1.0/en.md) | [Руководство и примеры возможностей](0.1.0/ru.md) | ESM / ES2022, browser Web APIs |

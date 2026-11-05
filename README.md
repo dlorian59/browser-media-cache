@@ -3,235 +3,177 @@
 <details name="readme-language">
 <summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/lang-en-dark.svg"><img src="assets/lang-en-light.svg" width="42" height="26" alt="EN"></picture></summary>
 
-Version: **[0.1.0](docs/0.1.0/en.md)** · [All documentation](docs/index.md)
+**Shared images and short media attachments, with one download per account and media key.** Use this browser library when the same avatar or attachment appears in several views. Removing one preview does not interrupt another; unused media is released according to a named cache profile.
 
-[Complete API and defaults](docs/0.1.0/reference.en.md) · [Troubleshooting](docs/0.1.0/reference.en.md#troubleshooting)
+**0.1.0 · TypeScript · ESM · MIT** · [Application guide](docs/0.1.0/application.en.md) · [API reference](docs/0.1.0/reference.en.md)
 
-Share browser media loads while keeping ownership of each object URL explicit.
-The framework-independent core provides acquire/release handles, consumer-specific
-cancellation, idle retention, budget eviction, and namespace cleanup. CacheStorage
-and React are optional imports.
+## Get started in your application
 
-The v0.1.0 source implementation and packed npm consumer are verified locally.
-The npm release is pending; the proposed @59alex scope still requires account
-ownership verification. No package-registry publication is implied.
+Add the dependency to your existing `package.json`:
 
-## Start with a local package
-
-```sh
-npm ci
-npm test
-npm pack
-# In your application:
-npm install /path/to/59alex-browser-media-cache-0.1.0.tgz
+```json
+{ "dependencies": { "@59alex/browser-media-cache": "0.1.0" } }
 ```
+
+The package is not published to npm yet. These are the intended coordinates; [local artifact setup](docs/0.1.0/en.md#setup) is available for evaluation.
 
 ```ts
-import { MediaCache } from '@59alex/browser-media-cache';
+import { createHttpMediaCache } from '@59alex/browser-media-cache';
 
-const media = new MediaCache({
-  load: async ({ key, signal }) => {
-    const response = await fetch(`/media/${encodeURIComponent(key)}`, { signal });
-    if (!response.ok) throw new Error(`Media request failed: ${response.status}`);
-    return response.blob();
-  },
-  idleTtlMs: 30_000,
-  maxEntries: 128,
-  maxBytes: 64 * 1024 * 1024,
+const media = createHttpMediaCache({
+  url: ({ key }) => `/api/media/${encodeURIComponent(key)}`,
 });
-const handle = media.acquire({ namespace: 'account:42', key: 'avatar:7:v3' });
-const { url } = await handle.ready;
-// Use url while the handle owns it. Remove it from the UI before releasing.
-handle.release();
+export function mountPortrait(image: HTMLImageElement, accountId: string,
+  showError: (error: unknown) => void) {
+  const handle = media.acquire({ namespace: accountId, key: 'portrait:42:v3' });
+  const clear = () => image.removeAttribute('src');
+  handle.signal.addEventListener('abort', clear, { once: true });
+  void handle.ready.then(resource => {
+    if (!handle.released) image.src = resource.url;
+  }, error => {
+    if (!(error instanceof DOMException && error.name === 'AbortError')) showError(error);
+  });
+  // EN: The caller runs this cleanup when the view closes.
+  // RU: Вызывающая сторона запускает cleanup при закрытии представления.
+  return () => { clear(); handle.release(); };
+}
 ```
 
-Two live handles for the same namespace/key share one load and one URL. Releasing
-one keeps the other valid. Releasing the final pending handle aborts its loader.
-Only idle entries are evicted for TTL or budget pressure; active consumers may
-exceed the configured budget. Explicit invalidation and disposal end even active
-ownership, abort the handle signal, and revoke URLs.
+`accountId`, `image` and `showError` come from your view. Call `mountPortrait` when mounting it; call the returned cleanup only when the view closes. The [complete attachment example](examples/http-attachments.ts) supplies a mount/cleanup function and account cleanup; the [walkthrough](docs/0.1.0/application.en.md) explains their lifetime. React applications can start directly with [MediaGallery](https://github.com/dlorian59/browser-media-cache-react#readme).
 
-## Capabilities and examples
+## Choose a sensible media budget
 
-For an avatar reused in a profile and attachment list, start with the
-[commented attachment example](examples/attachments.ts): one loader, independent
-image cleanup, per-preview cancellation, diagnostics and account logout.
-React applications can use the companion [browser-media-cache-react](https://github.com/dlorian59/browser-media-cache-react)
-provider, CachedImage and MediaBoundary. Clone the companion alongside the core to run its examples. It reuses
-this package's hook and owns no second cache.
-
-| Capability | Guide |
-| --- | --- |
-| Acquire/release and shared loads | [Ownership](docs/0.1.0/en.md#ownership-and-shared-loads) |
-| Per-consumer abort and load failures | [Cancellation and errors](docs/0.1.0/en.md#cancellation-and-errors) |
-| Idle TTL, entry/byte budgets, accounting | [Retention and budgets](docs/0.1.0/en.md#retention-and-budgets) |
-| Key invalidation, namespaces, logout | [Invalidation](docs/0.1.0/en.md#invalidation-and-logout) |
-| Full instance cleanup | [Disposal](docs/0.1.0/en.md#disposal) |
-| Optional persistent CacheStorage and quota policy | [Persistence](docs/0.1.0/en.md#optional-cachestorage) |
-| Optional React hook | [React](docs/0.1.0/en.md#optional-react-hook) |
-| Inspectable diagnostics and runnable stress lab | [Diagnostics and demo](docs/0.1.0/en.md#diagnostics-and-demo) |
-
-## Language and runtime baseline
-
-Build compiler: TypeScript 7.0.2. Generated JavaScript: ESM, ES2022; declarations
-are included. The implementation uses standard JavaScript private class fields,
-Promises and Web APIs. Blob, AbortController, AbortSignal.reason,
-URL.createObjectURL/revokeObjectURL, queueMicrotask, performance and timers must be
-available. They are platform requirements, not newly invented TypeScript features.
-CacheStorage additionally needs its browser API and a secure context.
-
-Tested locally on Linux: Chromium 156.0.8078.4 and Firefox 156.0. React adapter:
-React 19.3.1 development StrictMode. Safari/WebKit, mobile devices, older browser
-versions and React 18 have not been tested. Node 24.21.0 is the development/test
-runtime; an SSR-style import of the core and storage adapter is safe and tested.
-No browser polyfills are included. See [verification](docs/VERIFICATION.md).
-
-## Run the lifecycle lab
-
-```sh
-npm run demo
-# Open the printed localhost address yourself.
-npm run test:package
-npx playwright install chromium firefox
-npm run test:browser
+```ts
+const avatars = createHttpMediaCache({
+  profile: 'avatars',
+  url: ({ key }) => `/api/avatars/${encodeURIComponent(key)}`,
+});
 ```
 
-The demo exposes live handles, ready-entry Blob bytes, owned URLs, and eviction.
-Its checks decode a real image, exercise CacheStorage and run 500 two-consumer
-cycles plus 100 React StrictMode mount/unmount cycles. This measures lifecycle
-invariants, not browser heap usage or a performance benchmark.
+`previews` is the default: up to 8 MiB per HTTP response, a 30-second deadline and a 64 MiB retained-cache target. `avatars` uses a 2 MiB response limit and smaller retained budget. `transient` removes resources after their final owner leaves. [Profiles, limits and overrides](docs/0.1.0/application.en.md#choose-a-profile) · [Full source](examples/http-attachments.ts).
 
-## Boundaries
+## Reuse a download without coupling views
 
-Media is intentionally materialized as Blobs. This is not a streaming transport
-for arbitrarily large files. Byte accounting excludes in-flight buffers, decoded
-media, browser internals, and persistent storage. Namespace labels are not an
-authentication boundary. Storage ordering and invalidation coordinate one cache
-instance; another instance or tab can repopulate the same persistent namespace.
-Use versioned keys and application-owned account coordination.
+```ts
+const sidebar = media.acquire({ namespace: accountId, key: 'portrait:42:v3' });
+const message = media.acquire({ namespace: accountId, key: 'portrait:42:v3' });
+sidebar.release(); // The message still owns its resource.
+```
 
-The implementation is new code written against the documented contract; no
-private application source, configuration, history, or media fixtures were copied.
+The two views share one load and URL, but release independently. The remaining handle must be released when its view closes. [Ownership and cancellation](docs/0.1.0/application.en.md#two-views-one-download) · [Complete cleanup example](examples/http-attachments.ts).
 
-[MIT](LICENSE). [Roadmap and remaining release gates](ROADMAP.md).
+## Keep credentials current
+
+```ts
+const media = createHttpMediaCache({
+  url: ({ key }) => `/api/media/${encodeURIComponent(key)}`,
+  request: async ({ signal }) => ({
+    headers: { Authorization: `Bearer ${await session.accessToken(signal)}` },
+  }),
+});
+```
+
+`session` is your authentication layer. The callback runs on an actual network load; the server still checks access. Namespace names do not authorize requests. [Authentication and account changes](docs/0.1.0/application.en.md#account-changes-and-authentication).
+
+## Remove an account's cached media
+
+```ts
+// EN: Unmount that account's views first; await persistent cleanup if configured.
+// RU: Сначала уберите представления аккаунта; дождитесь очистки хранилища, если оно подключено.
+await media.invalidateNamespace(accountId);
+```
+
+Only the application owner calls `media.dispose()` at shutdown. Optional [CacheStorage](docs/0.1.0/en.md#optional-cachestorage), [custom Blob loaders](examples/attachments.ts) and the [React hook](examples/HookPreview.tsx) remain available.
+
+This is a cache for complete, bounded Blobs, not an arbitrarily large file stream. Active owners can exceed the retained budget; decoded media and browser buffers are separate. [Limits and failure handling](docs/0.1.0/application.en.md#when-loading-fails) · [All capabilities](docs/0.1.0/reference.en.md) · [Documentation](docs/index.md) · [MIT](LICENSE).
 
 </details>
 
 <details name="readme-language" open>
 <summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/lang-ru-dark.svg"><img src="assets/lang-ru-light.svg" width="42" height="26" alt="RU"></picture></summary>
 
-Версия: **[0.1.0](docs/0.1.0/ru.md)** · [Вся документация](docs/index.md)
+**Общие изображения и короткие медиа-вложения с одной загрузкой на аккаунт и ключ медиа.** Библиотека для браузера полезна, когда один аватар или файл показан в нескольких местах. Закрытие одного превью не мешает другому; неиспользуемые медиа освобождаются по выбранному профилю кэша.
 
-[Полный API и defaults](docs/0.1.0/reference.ru.md) · [Устранение проблем](docs/0.1.0/reference.ru.md#устранение-проблем)
+**0.1.0 · TypeScript · ESM · MIT** · [Руководство для приложения](docs/0.1.0/application.ru.md) · [Справочник API](docs/0.1.0/reference.ru.md)
 
-Общая загрузка медиа в браузере с явным владением каждым object URL. Независимое
-от фреймворков ядро предоставляет acquire/release handles, индивидуальную отмену,
-хранение неиспользуемых записей, вытеснение по бюджету и очистку namespace.
-CacheStorage и React подключаются отдельными импортами.
+## Подключение к приложению
 
-Исходная реализация v0.1.0 и установка упакованного npm-артефакта проверены
-локально. Публикация в npm ещё не выполнена; владение предполагаемым scope
-@59alex требует проверки. Наличие координат не означает публикацию в реестре.
+Добавьте зависимость в существующий `package.json`:
 
-## Начало работы с локальным пакетом
-
-```sh
-npm ci
-npm test
-npm pack
-# В вашем приложении:
-npm install /path/to/59alex-browser-media-cache-0.1.0.tgz
+```json
+{ "dependencies": { "@59alex/browser-media-cache": "0.1.0" } }
 ```
+
+Пакет пока не опубликован в npm. Это планируемые координаты; для оценки доступна [установка локального артефакта](docs/0.1.0/ru.md#подготовка).
 
 ```ts
-import { MediaCache } from '@59alex/browser-media-cache';
+import { createHttpMediaCache } from '@59alex/browser-media-cache';
 
-const media = new MediaCache({
-  load: async ({ key, signal }) => {
-    const response = await fetch(`/media/${encodeURIComponent(key)}`, { signal });
-    if (!response.ok) throw new Error(`Media request failed: ${response.status}`);
-    return response.blob();
-  },
-  idleTtlMs: 30_000,
-  maxEntries: 128,
-  maxBytes: 64 * 1024 * 1024,
+const media = createHttpMediaCache({
+  url: ({ key }) => `/api/media/${encodeURIComponent(key)}`,
 });
-const handle = media.acquire({ namespace: 'account:42', key: 'avatar:7:v3' });
-const { url } = await handle.ready;
-// Используйте url, пока handle владеет им. Уберите его из интерфейса перед release.
-handle.release();
+export function mountPortrait(image: HTMLImageElement, accountId: string,
+  showError: (error: unknown) => void) {
+  const handle = media.acquire({ namespace: accountId, key: 'portrait:42:v3' });
+  const clear = () => image.removeAttribute('src');
+  handle.signal.addEventListener('abort', clear, { once: true });
+  void handle.ready.then(resource => {
+    if (!handle.released) image.src = resource.url;
+  }, error => {
+    if (!(error instanceof DOMException && error.name === 'AbortError')) showError(error);
+  });
+  // EN: The caller runs this cleanup when the view closes.
+  // RU: Вызывающая сторона запускает cleanup при закрытии представления.
+  return () => { clear(); handle.release(); };
+}
 ```
 
-Два активных handle одного namespace/key разделяют загрузку и URL. Освобождение
-одного сохраняет второй. Последний освобождённый handle незавершённой загрузки
-отменяет её. TTL и бюджеты вытесняют только неиспользуемые записи: активные
-потребители могут превышать бюджет. Явная инвалидация и dispose завершают даже
-активное владение, отменяют signal handle и отзывают URL.
+`accountId`, `image` и `showError` принадлежат вашему представлению. Вызовите `mountPortrait` при его подключении, а возвращённый cleanup — только при закрытии. [Полный пример вложений](examples/http-attachments.ts) содержит функции подключения/очистки и выхода из аккаунта; [разбор](docs/0.1.0/application.ru.md) объясняет их время жизни. В React можно сразу использовать [MediaGallery](https://github.com/dlorian59/browser-media-cache-react#readme).
 
-## Возможности и примеры
+## Выбор бюджета медиа
 
-Для аватара, повторяющегося в профиле и списке вложений, используйте
-[комментированный пример](examples/attachments.ts): один loader, отдельная очистка
-изображений, отмена превью, диагностика и logout аккаунта. Для React подготовлен
-отдельный [browser-media-cache-react](https://github.com/dlorian59/browser-media-cache-react)
-с provider, CachedImage и MediaBoundary. Для запуска примеров клонируйте companion рядом с ядром. Он использует hook
-этого пакета и не содержит второго кэша.
-
-| Возможность | Руководство |
-| --- | --- |
-| Acquire/release и общие загрузки | [Владение](docs/0.1.0/ru.md#владение-и-общие-загрузки) |
-| Отмена отдельного потребителя и ошибки | [Отмена и ошибки](docs/0.1.0/ru.md#отмена-и-ошибки) |
-| TTL, бюджеты записей и байтов | [Хранение и бюджеты](docs/0.1.0/ru.md#хранение-и-бюджеты) |
-| Инвалидация ключа, namespace и logout | [Инвалидация](docs/0.1.0/ru.md#инвалидация-и-logout) |
-| Полная очистка экземпляра | [Dispose](docs/0.1.0/ru.md#dispose) |
-| Необязательный CacheStorage и квоты | [Постоянное хранилище](docs/0.1.0/ru.md#необязательный-cachestorage) |
-| Необязательный React hook | [React](docs/0.1.0/ru.md#необязательный-react-hook) |
-| Диагностика и лаборатория жизненного цикла | [Диагностика и демо](docs/0.1.0/ru.md#диагностика-и-демо) |
-
-## Язык и требования к среде
-
-Компилятор сборки: TypeScript 7.0.2. Выходной JavaScript: ESM, ES2022; объявления
-типов включены. Код использует стандартные приватные поля JavaScript, Promises
-и Web API. Нужны Blob, AbortController, AbortSignal.reason,
-URL.createObjectURL/revokeObjectURL, queueMicrotask, performance и таймеры.
-Это требования платформы, а не новые возможности TypeScript. Для CacheStorage
-дополнительно нужны соответствующий API браузера и безопасный контекст.
-
-Локально на Linux проверены Chromium 156.0.8078.4 и Firefox 156.0. React adapter
-проверен с React 19.3.1 в development StrictMode. Safari/WebKit, мобильные
-устройства, старые браузеры и React 18 не проверялись. Node 24.21.0 используется
-для разработки и тестов; импорт ядра и адаптера хранилища без браузерного
-окружения безопасен и проверен. Полифилы не включены.
-[Методика и результаты](docs/VERIFICATION.md).
-
-## Лаборатория жизненного цикла
-
-```sh
-npm run demo
-# Откройте выведенный адрес localhost в браузере.
-npm run test:package
-npx playwright install chromium firefox
-npm run test:browser
+```ts
+const avatars = createHttpMediaCache({
+  profile: 'avatars',
+  url: ({ key }) => `/api/avatars/${encodeURIComponent(key)}`,
+});
 ```
 
-Демо показывает активные handles, байты Blob готовых записей, URL и вытеснение.
-Проверки декодируют настоящее изображение, используют CacheStorage и выполняют
-500 циклов с двумя потребителями и 100 циклов mount/unmount в React StrictMode.
-Это проверка владения ресурсами, а не измерение heap браузера или бенчмарк.
+По умолчанию выбран `previews`: до 8 MiB на HTTP-ответ, срок загрузки 30 секунд и целевой бюджет удерживаемого кэша 64 MiB. У `avatars` ответ ограничен 2 MiB, бюджет кэша меньше. `transient` удаляет ресурс после ухода последнего владельца. [Профили, ограничения и настройка](docs/0.1.0/application.ru.md#выбор-профиля) · [Полный исходник](examples/http-attachments.ts).
 
-## Границы
+## Общая загрузка для независимых представлений
 
-Медиа намеренно материализуется в Blob. Библиотека не является потоковым
-транспортом для произвольно больших файлов. Учёт байтов исключает незавершённые
-загрузки, декодированные медиа, внутренние структуры браузера и постоянное
-хранилище. Namespace не заменяет аутентификацию. Очередность работы хранилища и
-инвалидация координируются внутри одного экземпляра: другая вкладка или экземпляр
-может снова записать тот же namespace. Используйте версионированные ключи и
-координацию аккаунтов на уровне приложения.
+```ts
+const sidebar = media.acquire({ namespace: accountId, key: 'portrait:42:v3' });
+const message = media.acquire({ namespace: accountId, key: 'portrait:42:v3' });
+sidebar.release(); // У сообщения остаётся своё владение ресурсом.
+```
 
-Реализация написана заново по описанному контракту. Приватные исходники,
-конфигурация, история и медиа приложения не копировались.
+Два представления используют одну загрузку и URL, но освобождают владение независимо. Оставшийся handle нужно освободить при закрытии его представления. [Владение и отмена](docs/0.1.0/application.ru.md#два-представления-одна-загрузка) · [Полная очистка в примере](examples/http-attachments.ts).
 
-[MIT](LICENSE). [План и оставшиеся условия релиза](ROADMAP.md).
+## Актуальная авторизация
+
+```ts
+const media = createHttpMediaCache({
+  url: ({ key }) => `/api/media/${encodeURIComponent(key)}`,
+  request: async ({ signal }) => ({
+    headers: { Authorization: `Bearer ${await session.accessToken(signal)}` },
+  }),
+});
+```
+
+`session` — ваша система авторизации. Callback вызывается при фактической сетевой загрузке; сервер по-прежнему проверяет доступ. Название namespace не даёт прав. [Авторизация и смена аккаунта](docs/0.1.0/application.ru.md#аккаунты-и-авторизация).
+
+## Очистка медиа аккаунта
+
+```ts
+// EN: Unmount that account's views first; await persistent cleanup if configured.
+// RU: Сначала уберите представления аккаунта; дождитесь очистки хранилища, если оно подключено.
+await media.invalidateNamespace(accountId);
+```
+
+`media.dispose()` при завершении работы вызывает только владелец приложения. Доступны необязательное [CacheStorage](docs/0.1.0/ru.md#необязательный-cachestorage), [свой Blob-загрузчик](examples/attachments.ts) и [React hook](examples/HookPreview.tsx).
+
+Это кэш готовых Blob ограниченного размера, а не потоковая передача сколь угодно больших файлов. Активные владельцы могут превышать бюджет удерживаемого кэша; декодированные медиа и браузерные буферы учитываются отдельно. [Ошибки и границы](docs/0.1.0/application.ru.md#если-загрузка-не-удалась) · [Все возможности](docs/0.1.0/reference.ru.md) · [Документация](docs/index.md) · [MIT](LICENSE).
 
 </details>

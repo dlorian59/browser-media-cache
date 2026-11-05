@@ -1,3 +1,6 @@
+export { createHttpMediaCache, MEDIA_CACHE_PROFILES, MediaHttpError } from './http.js';
+export type { HttpMediaCacheOptions, MediaCacheProfile } from './http.js';
+
 /** A stable logical media identity. Namespaces are isolation labels, not credentials. */
 export interface MediaKey {
   readonly namespace: string;

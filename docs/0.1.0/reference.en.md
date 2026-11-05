@@ -2,11 +2,32 @@
 
 [← Guide](en.md) · [RU](reference.ru.md) · [Versions](../index.md) · [README](../../README.md)
 
+## HTTP cache factory and profiles
+
+[Application walkthrough](application.en.md) · [Full source example](../../examples/http-attachments.ts)
+
+The root additionally exports `createHttpMediaCache`, `MEDIA_CACHE_PROFILES`, `MediaHttpError`, and types `HttpMediaCacheOptions`, `MediaCacheProfile`. The factory returns the existing `MediaCache`; its methods/ownership remain unchanged.
+
+| HTTP option | Default | Contract |
+|---|---|---|
+| `url(context)` | Required | Sync string/URL resolver; context is namespace/key/shared signal. Resolve the authorized final resource URL. |
+| `request(context)` | None | Sync/async RequestInit per actual network load, with the deadline signal. Own credentials/headers here; GET without a body only. |
+| `fetch` | Global fetch | Optional compatible authorized transport; must respect signal/redirect behavior. |
+| `profile` | `previews` | `previews`, `avatars` or `transient`; unknown names throw TypeError. |
+| `maxMediaBytes` | Profile value | Positive safe integer; Content-Length validation and actual body byte limit. Does not cap a persistent-store hit or browser decoding. |
+| `timeoutMs` | 30000 | Integer 1..2147483647, deadline includes async request config, headers and body. |
+| Remaining MediaCacheOptions except `load` | Existing defaults/profile | Explicit idle/entry/byte budgets override the profile; storage/hooks/diagnostics are reused. |
+
+Profiles are frozen: previews = 30s idle, 128 entries, 64MiB cache, 8MiB HTTP; avatars = 60s, 256 entries, 16MiB cache, 2MiB HTTP; transient = 0 idle/entries/cache, 8MiB HTTP. `MEDIA_CACHE_PROFILES` exposes these values for deliberate overrides/custom loaders. The HTTP factory always owns method GET, signal, cache no-store and redirect error; it performs no automatic retry, authentication refresh or MIME/codec validation.
+
+`MediaHttpError.status` is the rejected HTTP status. Oversized/invalid declared length or excessive actual bytes reject with RangeError. Deadline rejects with TimeoutError. Body rejection/cancellation closes its reader. A custom callback ignoring cancellation can keep its own background work alive, but no late request is dispatched after it resolves. Native browser buffering and Blob construction may use memory beyond the accepted byte count.
+
+
 ## Entry points and prerequisites
 
 | Import | Public exports | Runtime requirement |
 |---|---|---|
-| @59alex/browser-media-cache | MediaCache; types MediaKey, LoadContext, BlobStore, StoreOperation, StoreFailure, MediaCacheOptions, MediaResource, MediaHandle, AcquireOptions, EntrySnapshot, CacheSnapshot | ES2022, Blob, AbortController/Signal.reason, queueMicrotask, performance, timers, object URL API |
+| @59alex/browser-media-cache | MediaCache, createHttpMediaCache, MEDIA_CACHE_PROFILES, MediaHttpError; types HttpMediaCacheOptions, MediaCacheProfile, MediaKey, LoadContext, BlobStore, StoreOperation, StoreFailure, MediaCacheOptions, MediaResource, MediaHandle, AcquireOptions, EntrySnapshot, CacheSnapshot | ES2022, Blob, AbortController/Signal.reason, queueMicrotask, performance, timers, object URL API |
 | @59alex/browser-media-cache/cache-storage | CacheStorageStore, CacheStorageStoreOptions | CacheStorage, Request, Response; a secure browser context for native persistence |
 | @59alex/browser-media-cache/react | useMedia, MediaState | React ^18.3.1 or ^19.0.0; browser APIs when effects acquire media |
 | @59alex/browser-media-cache/package.json | Package metadata | JSON import support of the consumer's toolchain |

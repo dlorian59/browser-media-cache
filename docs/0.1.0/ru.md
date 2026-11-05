@@ -2,6 +2,8 @@
 
 [← Back to documentation and versions / Назад к документации и версиям](../index.md)
 
+[Подключение к приложению](application.ru.md)
+
 **[EN](en.md) · [RU](ru.md)** · [Выбор версии](../index.md) · [README репозитория](../../README.md)
 
 [Полный API, defaults, карта механизмов и устранение проблем](reference.ru.md)

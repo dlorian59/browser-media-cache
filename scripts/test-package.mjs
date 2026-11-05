@@ -51,7 +51,7 @@ try {
   console.log(`Packed documentation: ${checkedLinks} relative file links and ${checkedAnchors} heading anchors resolve.`);
   await writeFile(join(consumer, 'consumer.mjs'), `
     import assert from 'node:assert/strict';
-    import { MediaCache } from '@59alex/browser-media-cache';
+    import { MediaCache, createHttpMediaCache } from '@59alex/browser-media-cache';
     import { CacheStorageStore } from '@59alex/browser-media-cache/cache-storage';
     assert.equal(typeof CacheStorageStore, 'function');
     const cache = new MediaCache({ load: async () => new Blob(['packed']), maxEntries: 0 });
@@ -61,6 +61,10 @@ try {
     handle.release();
     assert.equal(cache.inspect().retainedBytes, 0);
     cache.dispose();
+    const http = createHttpMediaCache({ profile: 'transient', url: () => 'https://media.test/packed', fetch: async () => new Response('finite packed media') });
+    const preview = http.acquire({ namespace: 'consumer', key: 'preview' });
+    assert.equal(await (await preview.ready).blob.text(), 'finite packed media');
+    preview.release(); assert.equal(http.inspect().retainedBytes, 0); http.dispose();
     console.log('Packed ESM imports, lifecycle, and optional React isolation passed.');
   `);
   console.log(run(process.execPath, ['consumer.mjs'], consumer).trim());
@@ -68,6 +72,10 @@ try {
     import { MediaCache, type MediaHandle, type BlobStore } from '@59alex/browser-media-cache';
     import { CacheStorageStore } from '@59alex/browser-media-cache/cache-storage';
     import type { MediaState } from '@59alex/browser-media-cache/react';
+    import { createAttachmentCache, showAttachment } from './node_modules/@59alex/browser-media-cache/examples/http-attachments.js';
+    const applicationCache = createAttachmentCache();
+    const mount: typeof showAttachment = showAttachment;
+    void [applicationCache,mount];
     const store: BlobStore = new CacheStorageStore();
     const cache = new MediaCache({ load: async () => new Blob(), store });
     const handle: MediaHandle = cache.acquire({ namespace: 'account', key: 'avatar' });
