@@ -303,7 +303,7 @@ undefined. Ядро передаёт неизменяемые объекты к�
 ## Необязательный React hook
 
 Готовые provider, CachedImage и MediaBoundary подготовлены в отдельном
-[browser-media-cache-react](https://github.com/59Alex/browser-media-cache-react)
+[browser-media-cache-react](https://github.com/dlorian59/browser-media-cache-react)
 поверх этого же hook. Пока это локальный соседний репозиторий, ожидающий публичного
 создания. Его bootstrap собирает и устанавливает этот пакет как локальный tarball,
 поэтому публикация npm не требуется. Сам hook удобен, когда у приложения уже есть

@@ -296,7 +296,7 @@ remote implementation must define its own cross-client consistency guarantees.
 ## Optional React hook
 
 For ready-to-use components, the companion
-[browser-media-cache-react](https://github.com/59Alex/browser-media-cache-react)
+[browser-media-cache-react](https://github.com/dlorian59/browser-media-cache-react)
 provides a scoped provider, CachedImage and MediaBoundary over this same hook.
 It is currently a local sibling repository pending public creation. Its bootstrap
 builds and installs this package as a local tarball, so npm publication is not required.
